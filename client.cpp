@@ -1,28 +1,14 @@
 #include "common.h"
 
+#include <istream>
 #include <pthread.h>
 
-void p_exit(int value) {
-    exit(value);
-}
+static pthread_mutex_t lock;
 
-void *input_thread(void *data) {
-    cdata_t *cdata = (cdata_t *) data;
-    char buf[BUFSZ];
-    size_t count;
-    while(1) {
-        memset(buf, 0, BUFSZ);
-        printf("> ");
-        fgets(buf, BUFSZ, stdin);
-        count = send(cdata->csock, buf, strlen(buf)+1, 0);
-        if(count != strlen(buf)+1) {
-            printf("[log] send error\n");
-            p_exit(EXIT_FAILURE);
-        }
-    }
-    free(buf);
-    pthread_exit(EXIT_SUCCESS);
-}
+cdata_t cdata;
+
+void p_exit(int value);
+void *input_thread(void *data);
 
 int main(int argc, char *argv[]) {
     if(argc < 3) 
@@ -54,31 +40,51 @@ int main(int argc, char *argv[]) {
 
     printf("connected to %s \n", addrstr);
 
+    // iniciando dados do client
+    cdata.csock = s;
+    memcpy(&cdata.storage, &storage, sizeof(storage));
+
+    pthread_mutex_init(&lock, NULL);
+
+    pthread_t tid_input;
+    pthread_create(&tid_input, NULL, input_thread, NULL);
+
     char buf[BUFSZ];
-
-    cdata_t *cdata = new cdata_t();
-
-    if(!cdata) {
-        printf("[log] malloc error\n");
-        p_exit(EXIT_FAILURE);
-    }
-
-    cdata->csock = s;
-    memcpy(&cdata->storage, &storage, sizeof(storage));
-
-    pthread_t tid;
-    pthread_create(&tid, NULL, input_thread, (void *) cdata);
-
     size_t count;
     while(1) {
         memset(buf, 0, BUFSZ);
-        count = recv(s, buf, BUFSZ, 0);
-        if(0 == count)
+        count = recv(cdata.csock, buf, BUFSZ, 0);
+        if(0 == count) {
+            cout << "\nCan not receive message from server. Disconnecting...\n";
             break;
-        printf("%s", buf);
+        }
+        cout << "< " << buf;
     }
 
     close(s);
-    pthread_cancel(tid);
+    pthread_cancel(tid_input);
     exit(EXIT_SUCCESS);
+}
+
+void p_exit(int value) {
+    exit(value);
+}
+
+void *input_thread(void *data) {
+    char buf[BUFSZ];
+    string str;
+    size_t count;
+    while(1) {
+        memset(buf, 0, BUFSZ);
+
+        cout << "> "; fgets(buf, BUFSZ, stdin);
+
+        count = send(cdata.csock, buf, strlen(buf)+1, 0);
+        if(count != strlen(buf)+1) {
+            cout << "\n\n[log] send error\n";
+            p_exit(EXIT_FAILURE);
+        }
+        usleep(200);
+    }
+    pthread_exit(EXIT_SUCCESS);
 }

@@ -261,5 +261,3 @@ void *client_thread(void *data) {
     pthread_exit(EXIT_SUCCESS);
 }
 
-
-
