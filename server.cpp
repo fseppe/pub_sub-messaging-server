@@ -8,7 +8,7 @@ using namespace std;
 static pthread_mutex_t lock;
 static sem_t mutex; 
 
-map<string, set<int>> subs;
+unordered_map<string, set<int>> subs;
 queue<msg_t> pub_queue;
 
 void p_exit(int value);
@@ -97,7 +97,6 @@ void *publish_thread(void *data) {
     msg_t pub_data;
     string msg;
     set<string> tags;
-    int csock;
 
     cout << "publish thread started\n";
 
@@ -157,7 +156,6 @@ void *client_thread(void *data) {
         size_t count;
         set<string> tags;
         string tag;
-        int i;
         pair<int, set<string>> t_msg;
 
         while(1) {
@@ -248,10 +246,8 @@ void *client_thread(void *data) {
         // removendo todas as inscricoes do client
         pthread_mutex_lock(&lock);
         for(auto tag : cdata->tags) {
-            for(auto sock : subs[tag]) {
-                if(sock == cdata->csock) {
-                    subs[tag].erase(sock);
-                }
+            if(subs[tag].find(cdata->csock) != subs[tag].end()) {
+                subs[tag].erase(cdata->csock);
             }
         }
         pthread_mutex_unlock(&lock);
