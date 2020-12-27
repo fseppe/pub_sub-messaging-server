@@ -84,120 +84,61 @@ int server_sockaddr_init(const char *proto, const char *portstr, struct sockaddr
         return -1;
 }
 
-int find_char_idx(const char *str, const char s) {
-    // return -1 index value if char was not found. otherwise will return the index
-    for (size_t  i = 0; i < strlen(str); i++)
-        if(str[i] == s)
-            return i;
-    return -1;
-}
-
-int match(char const *text, char const *pattern) {
-    int c, d, e, text_length, pattern_length, position = -1;
-    text_length    = strlen(text);
-    pattern_length = strlen(pattern);
-
-    if (pattern_length > text_length) 
-        return -1;
-
-    for (c = 0; c <= text_length - pattern_length; c++) {
-        position = e = c;
-
-        for (d = 0; d < pattern_length; d++) {
-            if (pattern[d] == text[e]) 
-                e++;
-            else 
-                break;
-        }
-
-        if (d == pattern_length) 
-            return position;
-    }
-
-    return -1;
-}
-
-tuple<int, set<string>> parse_msg(char const *msg) {
-
+pair<int, set<string>> parse_msg(string const msg) {
     set<string> tags;
-    
-    char *temp = (char *) malloc(sizeof(char) * BUFSZ);
-    char *tag = (char *)  malloc(sizeof(char) * BUFSZ);
 
-    /*  como msgs sao terminadas em \n, procura-se pela primeira ocorrencia 
-        e substitui por \0  */
-    for(size_t i = 0; i < strlen(msg); i++) {
-        if(msg[i] == '\n') {
-            temp[i] = '\0';
-            break;
-        }
-        else
-            temp[i] = msg[i];
-    }
+    string temp = msg;
+    temp.replace(temp.find('\n'), 1, "\0");
 
     int category = S_COMMON;
-    
-    if(match(temp, MSG_KILL) != -1)
-        category = S_KILL;
 
-    else if(strlen(temp) > 1) {
+    if(temp.find(MSG_KILL) != string::npos) {
+        category = S_KILL;
+    }
+    else if(temp.length() > 1) {
         if(temp[0] == '+') {
             category = S_SUBSCRIBE;
-            int idx = find_char_idx(temp, ' ');
-            if (idx != -1) {
-                strncpy(tag, temp+1, (size_t) idx);
-                tags.insert(tag);
+            auto idx = temp.find(' ');
+            if(idx != string::npos) {
+                tags.insert(temp.substr(1, idx-1));
             }
             else {
-                strcpy(tag, temp+1);
-                tags.insert(tag);
+                tags.insert(temp.substr(1));
             }
         }
         else if(temp[0] == '-') {
             category = S_UNSUBSCRIBE;
-            int idx = find_char_idx(temp, ' ');
-            if (idx != -1) {
-                strncpy(tag, temp+1, (size_t) idx);
-                tags.insert(tag);
+            auto idx = temp.find(' ');
+            if(idx != string::npos) {
+                tags.insert(temp.substr(1, idx-1));
             }
             else {
-                strcpy(tag, temp+1);
-                tags.insert(tag);
+                tags.insert(temp.substr(1));
             }
         }
         else {
-            int first_idx, last_idx, itr_idx = 0;
-            while((size_t) itr_idx < strlen(temp)) {
-                first_idx = find_char_idx(temp+itr_idx, '#');
-                if(first_idx == -1)
+            size_t idx;
+            while(temp.length() > 1) {
+                idx = temp.find('#');
+                if(idx == string::npos) {
                     break;
-                    
-                first_idx += itr_idx + 1;
-                category = S_HASTAG;
+                }
 
-                last_idx = find_char_idx(temp+first_idx, ' ');
-                if (last_idx != -1) {
-                    last_idx += first_idx;
-                    strncpy(tag, temp+first_idx, (size_t) last_idx-first_idx);
-                    tags.insert(tag);
-                    itr_idx = last_idx+1;
+                temp = temp.substr(idx);
+
+                category = S_HASTAG;
+                idx = temp.find(' ');
+                if(idx != string::npos) {
+                    tags.insert(temp.substr(1, idx-1));
+                    temp = temp.substr(idx);
                 }
                 else {
-                    strcpy(tag, temp+first_idx);
-                    tags.insert(tag);
+                    tags.insert(temp.substr(1));
                     break;
                 }
             }
         }
     }
-    free(temp);
-    free(tag);
-    return make_tuple(category, tags);
-}
 
-entry_t *init_entry(string tag, cdata_t *cdata) {
-    entry_t *entry = new entry_t();
-    entry->tag = tag;
-    entry->cdata = cdata;
-    return entry;
+    return make_pair(category, tags);
 }

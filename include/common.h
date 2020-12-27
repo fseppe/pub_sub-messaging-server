@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 #include <queue>
-#include <tuple>
 #include <set>
 #include <map>
+#include <iostream>
 
 #include <stdio.h>
 #include <string.h>
@@ -30,16 +30,14 @@ using namespace std;
 
 typedef struct client_data {
     int csock;
-    vector<string> tags;
+    set<string> tags;
     struct sockaddr_storage storage;
 } cdata_t;
 
-typedef struct entry {
-    string tag;
-    cdata_t *cdata;
-} entry_t;
-
-void logexit(char const *msg);
+typedef struct msg_data {
+    string msg;
+    set<string> tags;
+} msg_t;
 
 int addrparse(const char *addrstr, const char *portstr, struct sockaddr_storage *storage);
 
@@ -47,10 +45,4 @@ int addrtostr(const struct sockaddr *addr, char *str, size_t strsize);
 
 int server_sockaddr_init(const char *proto, const char *portstr, struct sockaddr_storage *storage);
 
-int find_char_idx(const char *str, const char s);
-
-tuple<int, set<string>> parse_msg(char const *msg);
-
-int match(char const *text, char const *pattern);
-
-entry_t *init_entry(string tag, cdata_t *cdata);
+pair<int, set<string>> parse_msg(string const msg);

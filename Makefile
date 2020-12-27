@@ -6,7 +6,7 @@ SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name '*.$(SRCEXT)')
 OBJECTS := $(patsubst $(SRCDIR)/%,$(OBJDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
-CFLAGS := -g -Wall -std=c++11
+CFLAGS := -g -Wall -std=c++11 -O0
 INC := -Iinclude -lpthread -lrt
 
 MAIN_CLIENT := client.cpp
@@ -26,7 +26,7 @@ server: $(OBJECTS)
 	$(CC) $(MAIN_SERVER) $(INC) $(CFLAGS) $^ -o $(OBJ_SERVER)
 
 teste: $(OBJECTS)
-	$(CC) teste.c $(INC) $(CFLAGS) $^ -o teste
+	$(CC) teste.cpp $(INC) $(CFLAGS) $^ -o teste
 
 all: client server
 
