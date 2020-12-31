@@ -1,15 +1,16 @@
 #include "common.h"
 
 #include <pthread.h>
-#include <semaphore.h>
 
 using namespace std;
 
-static pthread_mutex_t lock;
-static sem_t mutex; 
+static pthread_mutex_t lock, aux_lock;
+static pthread_cond_t  not_empty; 
 
 unordered_map<string, set<int>> subs;
 queue<msg_t> pub_queue;
+
+pthread_t tid_publish;
 
 void p_exit(int value);
 void *publish_thread(void *data);
@@ -20,7 +21,8 @@ int main(int argc, char *argv[]) {
         return -1;
 
     pthread_mutex_init(&lock, NULL);
-    sem_init(&mutex, 0, 1);
+    pthread_mutex_init(&aux_lock, NULL);
+    pthread_cond_init(&not_empty, NULL);
 
     struct sockaddr_storage storage;
     if(0 != server_sockaddr_init("v4", argv[1], &storage))
@@ -57,7 +59,6 @@ int main(int argc, char *argv[]) {
         p_exit(EXIT_FAILURE);
     }
 
-    pthread_t tid_publish;
     pthread_create(&tid_publish, NULL, publish_thread, NULL);
 
     cout << "bound to " << addrstr << ", waiting connection\n";
@@ -87,7 +88,9 @@ int main(int argc, char *argv[]) {
 }
 
 void p_exit(int value) {
-    sem_destroy(&mutex); 
+    pthread_cancel(tid_publish);
+    pthread_cond_destroy(&not_empty);
+    pthread_mutex_destroy(&aux_lock);
     pthread_mutex_destroy(&lock);
     exit(value);
 }
@@ -133,7 +136,9 @@ void *publish_thread(void *data) {
         }
         else {
             // como a fila está vazia, irá aguardar até q possua novas msgs
-            sem_wait(&mutex); 
+            pthread_mutex_lock(&aux_lock);
+            pthread_cond_wait(&not_empty, &aux_lock);
+            pthread_mutex_unlock(&aux_lock);
         }
     }
     pthread_exit(EXIT_SUCCESS);
@@ -217,7 +222,7 @@ void *client_thread(void *data) {
                     pub_queue.push(v);
                     pthread_mutex_unlock(&lock); 
                     // sinaliza para a thread de publicação que a fila não está vazia
-                    sem_post(&mutex);
+                    pthread_cond_signal(&not_empty);
                     break;
                 }
 
