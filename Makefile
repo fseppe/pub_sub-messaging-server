@@ -31,4 +31,4 @@ teste: $(OBJECTS)
 all: client server
 
 clean:
-	rm $(OBJDIR)/* $(OBJ_CLIENT) $(OBJ_SERVER) teste
+	rm $(OBJDIR)/* $(OBJ_CLIENT) $(OBJ_SERVER)

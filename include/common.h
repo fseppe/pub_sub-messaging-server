@@ -29,15 +29,21 @@
 using namespace std;
 
 typedef struct client_data {
-    int csock;
-    set<string> tags;
-    struct sockaddr_storage storage;
+	int csock;
+	set<string> tags;
+	struct sockaddr_storage storage;
 } cdata_t;
 
 typedef struct msg_data {
-    string msg;
-    set<string> tags;
+	string msg;
+	set<string> tags;
 } msg_t;
+
+typedef struct parsing_data_t {
+	bool success;
+	vector<pair<int, set<string>>> msgs_list;
+	string buffer;
+} parsing_data;
 
 int addrparse(const char *addrstr, const char *portstr, struct sockaddr_storage *storage);
 
@@ -46,3 +52,8 @@ int addrtostr(const struct sockaddr *addr, char *str, size_t strsize);
 int server_sockaddr_init(const char *proto, const char *portstr, struct sockaddr_storage *storage);
 
 pair<int, set<string>> parse_msg(string const msg);
+
+// retorna falso se uma msg n esta em ascii
+bool ascii_msg(const char *msg);
+
+parsing_data parse_multiple_msgs(string msg);
