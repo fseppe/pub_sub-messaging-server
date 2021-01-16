@@ -3,6 +3,7 @@
 #include "parser.h"
 
 #include <pthread.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -89,6 +90,10 @@ int main(int argc, char *argv[]) {
 }
 
 void p_exit(int value) {
+	while (!publisher.queue_isempty()) {
+		// da uma folga enquanto espera
+		usleep(2000);
+	}
 	pthread_cancel(tid_publish);
 	pthread_cond_destroy(&not_empty);
 	pthread_mutex_destroy(&aux_lock);
