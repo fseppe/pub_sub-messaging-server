@@ -83,3 +83,12 @@ int server_sockaddr_init(const char *proto, const char *portstr, struct sockaddr
 	else 
 		return -1;
 }
+
+bool check_ascii(const char *msg) {
+	for (size_t i = 0; i < strlen(msg); i++) {
+		if (msg[i] > 127 || msg[i] < 0) {
+			return false;
+		}
+	}
+	return true;
+}

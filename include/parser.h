@@ -31,8 +31,6 @@ typedef struct split_data_t {
 	vector<string> msgs;
 } split_data;
 
-// return true if msg is in ascii
-bool check_ascii(const char *msg);
 
 // parse a msg and return its category and its tags
 parser_data parse_msg(const string msg);
