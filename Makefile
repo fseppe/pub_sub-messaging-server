@@ -7,7 +7,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name '*.$(SRCEXT)')
 OBJECTS := $(patsubst $(SRCDIR)/%,$(OBJDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 CFLAGS := -g -Wall -std=c++11 -O0
-INC := -Iinclude -lpthread -lrt
+INC := -Iinclude -lpthread
 
 MAIN_CLIENT := client.cpp
 MAIN_SERVER := server.cpp
