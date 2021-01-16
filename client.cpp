@@ -1,12 +1,9 @@
 #include "common.h"
 
-#include <istream>
+#include <iostream>
 #include <pthread.h>
 
-#include <chrono>
-#include <thread>
-
-static pthread_mutex_t lock;
+#define INPUT_SIZE 1024
 
 cdata_t cdata;
 
@@ -47,8 +44,7 @@ int main(int argc, char *argv[]) {
 	cdata.csock = s;
 	memcpy(&cdata.storage, &storage, sizeof(storage));
 
-	pthread_mutex_init(&lock, NULL);
-
+	// iniciando thread para receber da entrada padrao
 	pthread_t tid_input;
 	pthread_create(&tid_input, NULL, input_thread, NULL);
 
@@ -74,21 +70,28 @@ void p_exit(int value) {
 }
 
 void *input_thread(void *data) {
-	char buf[BUFSZ];
+	char buf[INPUT_SIZE];
 	string str;
 	size_t count;
 
 	while (true) {
-	    memset(buf, 0, BUFSZ);
+	    memset(buf, 0, INPUT_SIZE);
 
-	    cout << "> "; fgets(buf, BUFSZ, stdin);
+	    cout << "> "; fgets(buf, INPUT_SIZE, stdin);
 
-	    count = send(cdata.csock, buf, strlen(buf)+1, 0);
-	    if(count != strlen(buf)+1) {
-	        cout << "\n\n[log] send error\n";
-	        p_exit(EXIT_FAILURE);
-	    }
-	    // usleep(100000); // para nao bugar visualizacao no terminal
+		// para seguir ao protocolo, valida a entrada antes de enviar ao servidor
+		// como nao ira enviar mais de um \n pelo stdin, verificar apenas o tamanho eh valido
+		if (check_ascii(buf) == false || strlen(buf) >= BUFSZ) {
+			cout << "[log] invalid message\n"; 
+		} 
+		else {
+			count = send(cdata.csock, buf, strlen(buf)+1, 0);
+			if(count != strlen(buf)+1) {
+				cout << "[log] send error\n";
+				p_exit(EXIT_FAILURE);
+			}
+			// usleep(100000); // para nao bugar visualizacao no terminal
+		}
 	}
 
 	pthread_exit(EXIT_SUCCESS);
