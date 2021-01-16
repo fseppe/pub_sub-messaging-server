@@ -19,6 +19,8 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
+all: client server
+
 client: $(OBJECTS)
 	$(CC) $(MAIN_CLIENT) $(INC) $(CFLAGS) $^ -o $(OBJ_CLIENT)
 
@@ -27,8 +29,6 @@ server: $(OBJECTS)
 
 teste: $(OBJECTS)
 	$(CC) teste.cpp $(INC) $(CFLAGS) $^ -o teste
-
-all: client server
 
 clean:
 	rm $(OBJDIR)/* $(OBJ_CLIENT) $(OBJ_SERVER)
